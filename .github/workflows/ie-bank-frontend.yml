@@ -26,7 +26,8 @@ jobs:
           node-version: '18.x'
           cache: 'npm'
 
-      - name: npm install, build, and test
+      - name: npm install, build, and test - dev
+        if: github.ref != 'refs/heads/main'
         run: |
           npm install
           npm run build -- --mode development --dest dist-dev ## this command will build the vue.js app using .env.development variables into the dest-div/ folder
@@ -36,6 +37,19 @@ jobs:
         with:
           name: node-app-dev
           path: dist-dev/
+      - name: npm install, build, and test - uat
+        if: github.ref == 'refs/heads/main'
+        run: |
+          npm install
+          npm run build -- --mode production --dest dist-production ## this command will build the vue.js app using .env.development variables into the dest-div/ folder
+
+
+      - name: Upload frontend artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-app-production
+          path: frontend/dist-production/
 
   deploy-dev:
     if: github.ref != 'refs/heads/main'
@@ -74,7 +88,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v2
         with:
-          name: node-app-production
+          name: node-app-uat
 
       - uses: azure/login@v1
         with:
@@ -86,5 +100,3 @@ jobs:
         with:
           app-name: ${{ env.FRONTEND_WEBAPP_UAT }}
           package: .
-
-          
